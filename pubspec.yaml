@@ -1,0 +1,61 @@
+name: mapcapture
+description: A travel route planning application with map marking functionality.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.4.0
+  riverpod_annotation: ^2.3.0
+
+  # Database
+  drift: ^2.14.0
+  sqlite3_flutter_libs: ^0.5.18
+  path_provider: ^2.1.1
+  path: ^1.8.3
+
+  # Map - AMap (高德地图)
+  # Note: flutter_amap may not be available, will use amap_flutter_map instead
+  amap_flutter_map: ^3.0.0
+  amap_flutter_location: ^3.0.0
+
+  # Image Handling
+  image_picker: ^1.0.4
+  cached_network_image: ^3.3.0
+
+  # Permissions
+  permission_handler: ^11.0.1
+
+  # Routing
+  go_router: ^13.0.0
+
+  # Utilities
+  intl: ^0.18.1
+  uuid: ^4.2.1
+
+  # UI
+  flutter_svg: ^2.0.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.1
+
+  # Code Generation
+  build_runner: ^2.4.7
+  riverpod_generator: ^2.3.9
+  drift_dev: ^2.14.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
