@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit:*)",
+      "Bash(git push origin master:main)",
+      "Bash(python -m http.server 8000)",
+      "Bash(npx serve -l 8000 .)"
+    ]
+  }
+}
