@@ -252,6 +252,7 @@ const mapTitle = document.getElementById('mapTitle');
 const markerCount = document.getElementById('markerCount');
 const markerInfo = document.getElementById('markerInfo');
 const addMarkerHint = document.getElementById('addMarkerHint');
+const addMarkerBtn = document.getElementById('addMarkerBtn');
 const fab = document.getElementById('fab');
 const dialogOverlay = document.getElementById('dialogOverlay');
 const tripDialog = document.getElementById('tripDialog');
@@ -265,6 +266,9 @@ const searchClear = document.getElementById('searchClear');
 
 // Initialize
 function init() {
+    // Initialize theme manager
+    themeManager = new ThemeManager();
+
     renderTripList();
     setupEventListeners();
 
@@ -331,11 +335,11 @@ function initAMap() {
             console.log('Traffic layer initialized');
         });
 
-        // Map click listener for adding markers
-        amap.on('click', (e) => {
-            const lnglat = e.lnglat;
-            addMarker(lnglat.lat, lnglat.lng);
-        });
+        // Map click listener removed - markers now added via search
+        // amap.on('click', (e) => {
+        //     const lnglat = e.lnglat;
+        //     addMarker(lnglat.lat, lnglat.lng);
+        // });
 
         console.log('AMap initialized successfully');
     } catch (error) {
@@ -515,8 +519,10 @@ function renderAMap() {
     // Update marker count
     markerCount.textContent = markers.length;
 
-    // Show/hide add hint
-    addMarkerHint.style.display = markers.length === 0 ? 'block' : 'none';
+    // Show/hide add hint (if exists for backwards compatibility)
+    if (addMarkerHint) {
+        addMarkerHint.style.display = markers.length === 0 ? 'block' : 'none';
+    }
 
     // Create AMap markers
     markers.forEach((marker, index) => {
@@ -614,8 +620,10 @@ function renderMockMap() {
     // Update marker count
     markerCount.textContent = markers.length;
 
-    // Show/hide add hint
-    addMarkerHint.style.display = markers.length === 0 ? 'block' : 'none';
+    // Show/hide add hint (if exists for backwards compatibility)
+    if (addMarkerHint) {
+        addMarkerHint.style.display = markers.length === 0 ? 'block' : 'none';
+    }
 
     // Render markers
     const mapRect = mapElement.getBoundingClientRect();
@@ -724,22 +732,19 @@ function renderMockMap() {
     // Setup map drag
     setupMapDrag();
 
-    // Map click to add marker
-    mapElement.onclick = (e) => {
-        if (e.target === mapElement) {
-            const rect = mapElement.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            // Convert to mock coordinates (accounting for map offset and zoom)
-            const adjustedX = (x - centerX - mapOffsetX) / mapZoom;
-            const adjustedY = (y - centerY - mapOffsetY) / mapZoom;
-            const lat = 39.9042 + adjustedY / 10000;
-            const lng = 116.4074 + adjustedX / 10000;
-
-            addMarker(lat, lng);
-        }
-    };
+    // Map click to add marker removed - markers now added via search button
+    // mapElement.onclick = (e) => {
+    //     if (e.target === mapElement) {
+    //         const rect = mapElement.getBoundingClientRect();
+    //         const x = e.clientX - rect.left;
+    //         const y = e.clientY - rect.top;
+    //         const adjustedX = (x - centerX - mapOffsetX) / mapZoom;
+    //         const adjustedY = (y - centerY - mapOffsetY) / mapZoom;
+    //         const lat = 39.9042 + adjustedY / 10000;
+    //         const lng = 116.4074 + adjustedX / 10000;
+    //         addMarker(lat, lng);
+    //     }
+    // };
 }
 
 // Setup map drag functionality
@@ -1386,6 +1391,14 @@ function closeDialog() {
     dialogOverlay.style.display = 'none';
     tripDialog.style.display = 'none';
     markerDialog.style.display = 'none';
+    const themeDialog = document.getElementById('themeDialog');
+    if (themeDialog) {
+        themeDialog.style.display = 'none';
+    }
+    const addMarkerDialog = document.getElementById('addMarkerDialog');
+    if (addMarkerDialog) {
+        addMarkerDialog.style.display = 'none';
+    }
     uploadedImages = [];
     // Reset color selection
     selectedMarkerColor = '#F44336';
@@ -1600,6 +1613,206 @@ function clearSearch() {
     searchResults.style.display = 'none';
     searchClear.style.display = 'none';
     searchInput.focus();
+}
+
+// Theme Management
+class ThemeManager {
+    constructor() {
+        this.currentTheme = localStorage.getItem('theme') || 'orange';
+        this.init();
+    }
+
+    init() {
+        // Apply saved theme
+        this.applyTheme(this.currentTheme);
+
+        // Add theme button listener
+        const themeBtn = document.getElementById('themeBtn');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', () => this.showThemeDialog());
+        }
+    }
+
+    applyTheme(themeName) {
+        document.documentElement.setAttribute('data-theme', themeName);
+        this.currentTheme = themeName;
+        localStorage.setItem('theme', themeName);
+        this.updateThemeDialog();
+    }
+
+    showThemeDialog() {
+        const overlay = document.getElementById('dialogOverlay');
+        const dialog = document.getElementById('themeDialog');
+
+        if (overlay && dialog) {
+            overlay.style.display = 'block';
+            dialog.style.display = 'block';
+            this.updateThemeDialog();
+        }
+    }
+
+    updateThemeDialog() {
+        // Update active state in theme dialog
+        const themeOptions = document.querySelectorAll('.theme-option');
+        themeOptions.forEach(option => {
+            const theme = option.getAttribute('data-theme');
+            if (theme === this.currentTheme) {
+                option.classList.add('active');
+            } else {
+                option.classList.remove('active');
+            }
+        });
+    }
+}
+
+// Global theme manager instance
+let themeManager;
+
+// Global function to set theme
+function setTheme(themeName) {
+    if (themeManager) {
+        themeManager.applyTheme(themeName);
+    }
+}
+
+// Global function to close theme dialog
+function closeThemeDialog() {
+    const overlay = document.getElementById('dialogOverlay');
+    const dialog = document.getElementById('themeDialog');
+
+    if (overlay && dialog) {
+        overlay.style.display = 'none';
+        dialog.style.display = 'none';
+    }
+}
+
+// Add Marker Dialog Functions
+let selectedPlaceForMarker = null;
+
+function showAddMarkerSearch() {
+    const overlay = document.getElementById('dialogOverlay');
+    const dialog = document.getElementById('addMarkerDialog');
+
+    if (overlay && dialog) {
+        overlay.style.display = 'block';
+        dialog.style.display = 'block';
+
+        // Reset the dialog
+        const searchInput = document.getElementById('addMarkerSearchInput');
+        const searchResults = document.getElementById('addMarkerSearchResults');
+        searchInput.value = '';
+        searchResults.style.display = 'none';
+        searchResults.innerHTML = '';
+        selectedPlaceForMarker = null;
+
+        // Focus the search input
+        setTimeout(() => searchInput.focus(), 100);
+
+        // Add Enter key support
+        searchInput.onkeypress = (e) => {
+            if (e.key === 'Enter') {
+                searchPlaceForMarker();
+            }
+        };
+    }
+}
+
+function closeAddMarkerDialog() {
+    const overlay = document.getElementById('dialogOverlay');
+    const dialog = document.getElementById('addMarkerDialog');
+
+    if (overlay && dialog) {
+        overlay.style.display = 'none';
+        dialog.style.display = 'none';
+    }
+    selectedPlaceForMarker = null;
+}
+
+function searchPlaceForMarker() {
+    const keyword = document.getElementById('addMarkerSearchInput').value.trim();
+    if (!keyword) return;
+
+    // Use AMap AutoComplete for place search
+    if (typeof AMap !== 'undefined') {
+        const placeSearch = new AMap.PlaceSearch({
+            pageSize: 10,
+            pageIndex: 1
+        });
+
+        placeSearch.search(keyword, (status, result) => {
+            if (status === 'complete' && result.poiList && result.poiList.pois) {
+                displayAddMarkerSearchResults(result.poiList.pois);
+            } else {
+                // Fallback to auto complete
+                const autoComplete = new AMap.AutoComplete({
+                    city: '全国'
+                });
+                autoComplete.search(keyword, (status, result) => {
+                    if (status === 'complete' && result.tips) {
+                        displayAddMarkerSearchResults(result.tips);
+                    } else {
+                        showNoResults();
+                    }
+                });
+            }
+        });
+    } else {
+        showNoResults();
+    }
+}
+
+function displayAddMarkerSearchResults(results) {
+    const searchResults = document.getElementById('addMarkerSearchResults');
+
+    if (results.length === 0) {
+        showNoResults();
+        return;
+    }
+
+    searchResults.innerHTML = results.map((place, index) => {
+        const name = place.name || place.name || '未知地点';
+        const address = place.address || place.district || place.address || '地址未知';
+        const location = place.location || place.location;
+
+        return `
+            <div class="search-result-item" onclick="selectPlaceForMarker(${index})" data-index="${index}">
+                <div class="search-result-name">${escapeHtml(name)}</div>
+                <div class="search-result-address">${escapeHtml(address)}</div>
+            </div>
+        `;
+    }).join('');
+
+    // Store results for selection
+    window.currentSearchResults = results;
+    searchResults.style.display = 'block';
+}
+
+function showNoResults() {
+    const searchResults = document.getElementById('addMarkerSearchResults');
+    searchResults.innerHTML = '<div class="search-result-item" style="color: var(--text-secondary);">未找到相关地点</div>';
+    searchResults.style.display = 'block';
+}
+
+function selectPlaceForMarker(index) {
+    const place = window.currentSearchResults[index];
+    if (!place) return;
+
+    const location = place.location;
+    if (!location) return;
+
+    const name = place.name || place.name || '未知地点';
+    const address = place.address || place.district || place.address || '';
+
+    // Add marker with the selected place
+    addMarker(location.lat, location.lng, name, address);
+
+    // Close dialog and pan to the new marker
+    closeAddMarkerDialog();
+
+    if (typeof amap !== 'undefined') {
+        amap.panTo([location.lng, location.lat]);
+        amap.setZoom(15);
+    }
 }
 
 // Initialize app

@@ -2,7 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>MapCapture - 旅游路线规划</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,6 +16,19 @@
             <div class="header-content">
                 <h1>🗺️ MapCapture</h1>
                 <div class="header-actions">
+                    <button id="themeBtn" class="icon-btn" title="切换主题">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                    </button>
                     <button id="refreshBtn" class="icon-btn" title="刷新">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M23 4v6h-6M1 20v-6h6"/>
@@ -51,11 +67,10 @@
             <!-- Map View -->
             <div id="mapView" class="view" style="display: none;">
                 <div class="map-header">
-                    <button class="back-btn" onclick="showTripList()">
+                    <button class="icon-btn back-btn" onclick="showTripList()" title="返回">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M19 12H5M12 19l-7-7 7-7"/>
                         </svg>
-                        返回
                     </button>
                     <h2 id="mapTitle">行程名称</h2>
                     <div class="map-actions">
@@ -163,10 +178,18 @@
                         </div>
                     </div>
 
-                    <!-- Add Marker Hint -->
-                    <div id="addMarkerHint" class="add-marker-hint">
-                        👆 点击地图添加标记
-                    </div>
+                    <!-- Add Marker Button -->
+                    <button id="addMarkerBtn" class="add-marker-btn" onclick="showAddMarkerSearch()" title="添加标记">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                            <line x1="12" y1="5" x2="12" y2="3"/>
+                            <line x1="12" y1="17" x2="12" y2="15"/>
+                            <line x1="8" y1="10" x2="6" y2="10"/>
+                            <line x1="18" y1="10" x2="16" y2="10"/>
+                        </svg>
+                        <span>添加标记</span>
+                    </button>
                 </div>
             </div>
         </main>
@@ -197,6 +220,51 @@
         <div class="dialog-footer">
             <button class="btn secondary" onclick="closeDialog()">取消</button>
             <button class="btn primary" id="tripDialogConfirm">创建</button>
+        </div>
+    </div>
+
+    <!-- Theme Picker Dialog -->
+    <div id="themeDialog" class="dialog theme-dialog" style="display: none;">
+        <div class="dialog-header">
+            <h3>选择主题</h3>
+            <button class="close-btn" onclick="closeThemeDialog()">×</button>
+        </div>
+        <div class="dialog-body">
+            <div class="theme-picker">
+                <div class="theme-option" data-theme="orange" onclick="setTheme('orange')">
+                    <div class="theme-color" style="background: #FF9500;"></div>
+                    <span class="theme-name">浅色</span>
+                </div>
+                <div class="theme-option" data-theme="dark" onclick="setTheme('dark')">
+                    <div class="theme-color" style="background: #1E1E1E;"></div>
+                    <span class="theme-name">深色</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Marker Search Dialog -->
+    <div id="addMarkerDialog" class="dialog" style="display: none;">
+        <div class="dialog-header">
+            <h3>添加标记</h3>
+            <button class="close-btn" onclick="closeAddMarkerDialog()">×</button>
+        </div>
+        <div class="dialog-body">
+            <label>搜索地点</label>
+            <div class="search-box-full">
+                <input type="text" id="addMarkerSearchInput" placeholder="输入地点名称或地址" autocomplete="off">
+                <button class="search-btn-small" onclick="searchPlaceForMarker()" title="搜索">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="addMarkerSearchResults" class="search-results-dialog" style="display: none;"></div>
+            <p class="hint-text">💡 搜索地点后，点击结果添加标记</p>
+        </div>
+        <div class="dialog-footer">
+            <button class="btn secondary" onclick="closeAddMarkerDialog()">取消</button>
         </div>
     </div>
 

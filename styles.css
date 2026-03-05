@@ -4,19 +4,57 @@
     box-sizing: border-box;
 }
 
-:root {
-    --primary: #2196F3;
-    --primary-dark: #1976D2;
-    --secondary: #03A9F4;
-    --danger: #F44336;
+/* 默认主题 - 橙色 */
+:root,
+[data-theme="orange"] {
+    --primary: #FF9500;
+    --primary-dark: #E68600;
+    --primary-light: #FFB84D;
+    --secondary: #4DB6AC;
+    --secondary-light: #E0F7FA;
+    --accent: #FF6B35;
+    --danger: #FF5252;
     --success: #4CAF50;
-    --background: #f5f5f5;
-    --surface: #ffffff;
+    --background: #F5F5F5;
+    --surface: #FFFFFF;
     --text-primary: #212121;
     --text-secondary: #757575;
-    --border: #e0e0e0;
-    --shadow: 0 2px 8px rgba(0,0,0,0.1);
-    --shadow-lg: 0 4px 16px rgba(0,0,0,0.15);
+    --border: #E0E0E0;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 20px rgba(0,0,0,0.12);
+    --shadow-primary: 0 4px 16px rgba(255, 149, 0, 0.25);
+    --header-bg: #E0F7FA;
+    --trip-cover-bg: #FF9500;
+    --marker-bg: #FF6B35;
+    --badge-bg: #4DB6AC;
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/* 深色主题 */
+[data-theme="dark"] {
+    --primary: #FF9500;
+    --primary-dark: #FFB84D;
+    --primary-light: #E68600;
+    --secondary: #4DB6AC;
+    --secondary-light: #263238;
+    --accent: #FF6B35;
+    --danger: #FF5252;
+    --success: #4CAF50;
+    --background: #121212;
+    --surface: #1E1E1E;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B0B0B0;
+    --border: #333333;
+    --shadow: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-lg: 0 4px 20px rgba(0,0,0,0.4);
+    --shadow-primary: 0 4px 16px rgba(255, 149, 0, 0.25);
+    --header-bg: #1E1E1E;
+    --trip-cover-bg: #FF9500;
+    --marker-bg: #FF6B35;
+    --badge-bg: #4DB6AC;
 }
 
 body {
@@ -26,39 +64,54 @@ body {
     overflow-x: hidden;
 }
 
-/* Header */
+/* Header - 纯色背景 */
 .header {
-    background: var(--surface);
+    background: var(--header-bg);
     box-shadow: var(--shadow);
     position: sticky;
     top: 0;
     z-index: 100;
+    padding-top: var(--safe-area-inset-top);
+}
+
+/* Dropdown Menu - 确保在header之上 */
+.dropdown-menu {
+    z-index: 200;
 }
 
 .header-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 16px 20px;
+    padding: 12px 16px;
+    padding-left: calc(16px + var(--safe-area-inset-left));
+    padding-right: calc(16px + var(--safe-area-inset-right));
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
 }
 
 .header h1 {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .header-actions {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     align-items: center;
+    flex-shrink: 0;
 }
 
 /* Buttons */
 .icon-btn {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: none;
     background: transparent;
     border-radius: 50%;
@@ -68,10 +121,16 @@ body {
     justify-content: center;
     color: var(--text-primary);
     transition: background 0.2s;
+    flex-shrink: 0;
 }
 
 .icon-btn:hover {
     background: rgba(0,0,0,0.05);
+}
+
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
 }
 
 .btn {
@@ -87,10 +146,13 @@ body {
 .btn.primary {
     background: var(--primary);
     color: white;
+    box-shadow: var(--shadow-primary);
 }
 
 .btn.primary:hover {
     background: var(--primary-dark);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
 }
 
 .btn.secondary {
@@ -104,7 +166,8 @@ body {
 }
 
 .btn.danger:hover {
-    background: #d32f2f;
+    background: #FF5252;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
 }
 
 /* Dropdown */
@@ -115,13 +178,13 @@ body {
 .dropdown-menu {
     display: none;
     position: absolute;
-    top: 100%;
-    right: 0;
+    top: calc(100% + 4px);
+    right: -4px;
     background: var(--surface);
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
-    min-width: 180px;
-    padding: 8px 0;
+    min-width: 160px;
+    padding: 4px 0;
     z-index: 200;
 }
 
@@ -131,7 +194,7 @@ body {
 
 .dropdown-menu button {
     width: 100%;
-    padding: 12px 16px;
+    padding: 10px 14px;
     border: none;
     background: transparent;
     text-align: left;
@@ -168,31 +231,33 @@ body {
 
 .trip-card {
     background: var(--surface);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 16px;
     box-shadow: var(--shadow);
     display: flex;
     gap: 16px;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid rgba(0,0,0,0.04);
 }
 
 .trip-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
+    border-color: var(--primary-light);
 }
 
 .trip-cover {
     width: 80px;
     height: 80px;
-    background: var(--primary);
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    border-radius: 8px;
+    background: var(--trip-cover-bg);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 32px;
     flex-shrink: 0;
+    box-shadow: var(--shadow-primary);
 }
 
 .trip-info {
@@ -225,6 +290,9 @@ body {
 .empty-state {
     text-align: center;
     padding: 60px 20px;
+    background: var(--header-bg);
+    border-radius: 20px;
+    margin: 20px 0;
 }
 
 .empty-icon {
@@ -245,63 +313,64 @@ body {
 /* FAB */
 .fab {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: calc(24px + var(--safe-area-inset-bottom));
+    right: calc(24px + var(--safe-area-inset-right));
     background: var(--primary);
     color: white;
     border: none;
-    border-radius: 24px;
+    border-radius: 28px;
     padding: 16px 24px;
     font-size: 16px;
-    font-weight: 500;
-    box-shadow: var(--shadow-lg);
+    font-weight: 600;
+    box-shadow: var(--shadow-primary);
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: transform 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fab:hover {
     transform: scale(1.05);
+    box-shadow: var(--shadow-lg);
 }
 
 /* Map View */
 .map-header {
     background: var(--surface);
-    padding: 12px 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    box-shadow: var(--shadow);
-    position: sticky;
-    top: 0;
-    z-index: 50;
-}
-
-.back-btn {
+    padding: 8px 12px;
     display: flex;
     align-items: center;
     gap: 8px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    color: var(--text-primary);
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 90;
+}
+
+.map-header .icon-btn {
+    flex-shrink: 0;
 }
 
 .map-header h2 {
     flex: 1;
-    font-size: 18px;
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .map-actions {
     display: flex;
-    gap: 8px;
+    gap: 4px;
+    flex-shrink: 0;
 }
 
 .map-container {
     position: relative;
-    height: calc(100vh - 60px);
+    height: calc(100dvh - 60px);
 }
 
 /* Map Search */
@@ -335,7 +404,7 @@ body {
 }
 
 .search-btn {
-    background: #2196F3;
+    background: var(--primary);
     border: none;
     padding: 10px 14px;
     cursor: pointer;
@@ -347,7 +416,7 @@ body {
 }
 
 .search-btn:hover {
-    background: #1976D2;
+    background: var(--primary-dark);
 }
 
 .search-clear {
@@ -456,7 +525,7 @@ body {
 .map-marker-icon {
     width: 40px;
     height: 40px;
-    background: var(--danger);
+    background: var(--marker-bg);
     border-radius: 50% 50% 50% 0;
     transform: rotate(-45deg);
     display: flex;
@@ -536,7 +605,8 @@ body {
     font-size: 16px;
 }
 
-.close-btn {
+/* Marker Info Header Close Button */
+.marker-info-header .close-btn {
     width: 32px;
     height: 32px;
     border: none;
@@ -549,6 +619,12 @@ body {
     align-items: center;
     justify-content: center;
 }
+
+.marker-info-header .close-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Dialog Header Close Button */
 
 .marker-info-content {
     padding: 16px;
@@ -604,6 +680,93 @@ body {
     pointer-events: none;
 }
 
+/* Add Marker Button */
+.add-marker-btn {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: var(--shadow-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s;
+    z-index: 60;
+}
+
+.add-marker-btn:hover {
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: var(--shadow-lg);
+}
+
+.add-marker-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Search Box in Dialog */
+.search-box-full {
+    display: flex;
+    align-items: center;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.search-box-full input {
+    flex: 1;
+    border: none;
+    padding: 12px;
+    font-size: 14px;
+    outline: none;
+    background: transparent;
+}
+
+.search-box-full input:focus {
+    background: var(--surface);
+}
+
+.search-btn-small {
+    background: var(--primary);
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: background 0.2s;
+}
+
+.search-btn-small:hover {
+    background: var(--primary-dark);
+}
+
+/* Search Results in Dialog */
+.search-results-dialog {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.hint-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
 /* Dialog */
 .dialog-overlay {
     position: fixed;
@@ -614,6 +777,11 @@ body {
     background: rgba(0,0,0,0.5);
     z-index: 1000;
     display: none;
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+    backdrop-filter: blur(2px);
 }
 
 .dialog {
@@ -622,11 +790,13 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     background: var(--surface);
-    border-radius: 12px;
+    border-radius: 16px;
     box-shadow: var(--shadow-lg);
     z-index: 1001;
     min-width: 320px;
     max-width: 90%;
+    max-height: 90dvh;
+    overflow: hidden;
 }
 
 .dialog-header {
@@ -635,10 +805,33 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: var(--surface);
 }
 
 .dialog-header h3 {
     font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dialog-header .close-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.dialog-header .close-btn:hover {
+    background: var(--background);
+    color: var(--text-primary);
 }
 
 .dialog-body {
@@ -696,9 +889,10 @@ body {
     border-radius: 20px 20px 0 0;
     box-shadow: var(--shadow-lg);
     z-index: 500;
-    max-height: 70vh;
+    max-height: 70dvh;
     display: none;
     flex-direction: column;
+    padding-bottom: var(--safe-area-inset-bottom);
 }
 
 .bottom-sheet-handle {
@@ -745,7 +939,7 @@ body {
 .marker-list-item .number {
     width: 32px;
     height: 32px;
-    background: var(--primary);
+    background: var(--badge-bg);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -1026,7 +1220,7 @@ body {
 .dialog.large {
     width: 90%;
     max-width: 500px;
-    max-height: 90vh;
+    max-height: 90dvh;
     overflow-y: auto;
 }
 
@@ -1103,26 +1297,572 @@ body {
     color: var(--text-secondary);
 }
 
+/* Theme Picker */
+.theme-picker {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.theme-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.theme-option:hover {
+    transform: scale(1.05);
+}
+
+.theme-option.active {
+    transform: scale(1.1);
+}
+
+.theme-color {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.theme-option.active .theme-color {
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--text-primary);
+}
+
+.theme-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.theme-option.active .theme-name {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Theme Dialog */
+.theme-dialog {
+    max-width: 400px;
+}
+
+.theme-dialog .dialog-body {
+    padding: 20px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+    /* Header */
+    .header {
+        position: sticky;
+        top: 0;
+    }
+
+    .header-content {
+        padding: 12px 16px;
+    }
+
     .header h1 {
-        font-size: 20px;
+        font-size: 18px;
+    }
+
+    .icon-btn {
+        width: 44px;
+        height: 44px;
+        /* Touch-friendly size */
+    }
+
+    /* Main Content */
+    #mainContent {
+        padding: 16px;
+    }
+
+    /* Trip List */
+    .trip-list {
+        gap: 12px;
+        padding-bottom: 100px; /* Space for FAB */
     }
 
     .trip-card {
-        flex-direction: column;
+        flex-direction: row;
+        padding: 12px;
+        gap: 12px;
     }
 
     .trip-cover {
-        width: 100%;
-        height: 120px;
+        width: 70px;
+        height: 70px;
+        font-size: 28px;
     }
 
+    .trip-info h3 {
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+
+    .trip-meta {
+        font-size: 12px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    /* Empty State */
+    .empty-state {
+        padding: 40px 20px;
+    }
+
+    .empty-icon {
+        font-size: 60px;
+        margin-bottom: 16px;
+    }
+
+    /* FAB */
+    .fab {
+        bottom: calc(20px + var(--safe-area-inset-bottom));
+        right: calc(20px + var(--safe-area-inset-right));
+        padding: 14px 20px;
+        font-size: 15px;
+    }
+
+    /* Map Header */
+    .map-header {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .back-btn {
+        font-size: 14px;
+        gap: 6px;
+    }
+
+    .back-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .map-header h2 {
+        font-size: 16px;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .map-actions {
+        gap: 4px;
+    }
+
+    .map-actions .icon-btn {
+        width: 40px;
+        height: 40px;
+        padding: 8px;
+    }
+
+    .map-actions .icon-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Map Search */
+    .map-search-container {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+    }
+
+    .search-box input {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .search-btn {
+        padding: 8px 12px;
+    }
+
+    /* Marker Count */
+    .marker-count {
+        top: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    /* Marker Info Card */
+    .marker-info {
+        bottom: calc(16px + var(--safe-area-inset-bottom));
+        left: calc(12px + var(--safe-area-inset-left));
+        right: calc(12px + var(--safe-area-inset-right));
+        border-radius: 16px;
+    }
+
+    .marker-info-header {
+        padding: 12px 14px;
+    }
+
+    .marker-info-header h3 {
+        font-size: 15px;
+    }
+
+    .close-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 18px;
+    }
+
+    .marker-info-content {
+        padding: 14px;
+    }
+
+    .marker-info-actions button {
+        padding: 14px;
+        font-size: 14px;
+    }
+
+    /* Dialog */
     .dialog {
-        width: 90%;
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: none;
+        width: 100%;
+        max-width: 100%;
+        min-width: 100%;
+        border-radius: 20px 20px 0 0;
+        max-height: 90dvh;
+    }
+
+    .dialog.large {
+        width: 100%;
+        max-width: 100%;
+        max-height: 85dvh;
+    }
+
+    .dialog-header {
+        padding: 16px 20px;
+    }
+
+    .dialog-header h3 {
+        font-size: 18px;
+    }
+
+    .dialog-body {
+        padding: 16px 20px;
+        max-height: calc(90vh - 140px);
+        overflow-y: auto;
+    }
+
+    .dialog-footer {
+        padding: 14px 20px;
+        gap: 10px;
+    }
+
+    .dialog-body label {
+        font-size: 13px;
+    }
+
+    .dialog-body input,
+    .dialog-body textarea {
+        padding: 12px;
+        font-size: 16px; /* Prevents auto-zoom on iOS */
+    }
+
+    /* Bottom Sheet */
+    .bottom-sheet {
+        border-radius: 20px 20px 0 0;
+        max-height: 85dvh;
+        padding-bottom: calc(12px + var(--safe-area-inset-bottom));
+    }
+
+    .bottom-sheet-handle {
+        width: 36px;
+        height: 4px;
+        margin: 10px auto;
+    }
+
+    .bottom-sheet-header {
+        padding: 14px 20px;
+    }
+
+    .bottom-sheet-content {
+        padding: 14px 20px;
+    }
+
+    /* Marker List */
+    .marker-list-item {
+        padding: 10px;
+    }
+
+    .marker-list-item .number {
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
+    }
+
+    .marker-list-item .info h4 {
+        font-size: 14px;
+    }
+
+    .marker-list-item .info p {
+        font-size: 12px;
+    }
+
+    /* Image Upload */
+    .image-upload-area {
+        padding: 20px 16px;
+    }
+
+    .uploaded-images {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 8px;
+    }
+
+    .uploaded-image-item .remove-btn {
+        width: 22px;
+        height: 22px;
+        font-size: 12px;
+    }
+
+    /* Marker Images */
+    .marker-images-grid {
+        grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+        gap: 6px;
+    }
+
+    /* Image Preview */
+    .preview-close,
+    .preview-prev,
+    .preview-next {
+        width: 44px;
+        height: 44px;
+    }
+
+    .preview-close {
+        top: 16px;
+        right: 16px;
+    }
+
+    .preview-prev {
+        left: 16px;
+    }
+
+    .preview-next {
+        right: 16px;
+    }
+
+    #previewImage {
+        max-width: 95%;
+        max-height: 85%;
+    }
+
+    .preview-counter {
+        bottom: 16px;
+        padding: 6px 14px;
+        font-size: 13px;
+    }
+
+    /* Icon Picker */
+    .icon-picker {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+    }
+
+    .icon-option {
+        padding: 6px;
+    }
+
+    .icon-option svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .icon-option span {
+        font-size: 10px;
+    }
+
+    /* Add Marker Hint */
+    .add-marker-hint {
+        bottom: 120px;
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    /* Trip Actions Menu */
+    .dropdown-menu {
+        min-width: 160px;
+    }
+}
+
+/* Extra small devices (iPhone SE, etc.) */
+@media (max-width: 375px) {
+    .header h1 {
+        font-size: 16px;
+    }
+
+    .map-header h2 {
+        max-width: 100px;
+        font-size: 15px;
+    }
+
+    .trip-cover {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+
+    .trip-info h3 {
+        font-size: 15px;
+    }
+
+    .fab {
+        padding: 12px 16px;
+        font-size: 14px;
     }
 
     .marker-images-grid {
         grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    }
+
+    .icon-picker {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    /* Disable hover effects on touch devices */
+    .trip-card:hover,
+    .fab:hover,
+    .icon-btn:hover,
+    .btn:hover {
+        transform: none;
+    }
+
+    /* Ensure touch targets are at least 44px */
+    .trip-card,
+    .marker-list-item,
+    .search-result-item {
+        min-height: 44px;
+    }
+
+    .dropdown-menu button {
+        min-height: 44px;
+        padding: 14px 16px;
+    }
+}
+
+/* ===== 移动端全屏优化 ===== */
+/* 确保 HTML 和 Body 占满整个视口 */
+html {
+    height: 100dvh;
+    width: 100%;
+}
+
+body {
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden; /* 防止整体页面滚动 */
+}
+
+/* 确保 #app 占满整个视口 */
+#app {
+    height: 100dvh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 主内容区域自适应 */
+#mainContent {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    max-width: 100%;
+    height: 100%;
+}
+
+/* 行程列表视图优化 */
+#tripListView {
+    height: 100%;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+/* 地图视图全屏优化 */
+#mapView {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.map-container {
+    flex: 1;
+    height: auto !important;
+    overflow: hidden;
+}
+
+/* 移动端特定优化 */
+@media (max-width: 768px) {
+    /* 移除 padding-bottom，使用固定定位按钮 */
+    .trip-list {
+        padding-bottom: 80px;
+    }
+
+    /* 地图容器全屏 */
+    .map-container {
+        height: 100% !important;
+    }
+
+    /* 确保对话框在移动端全屏显示 */
+    .dialog {
+        max-height: 90dvh !important;
+    }
+
+    .dialog.large {
+        max-height: 90dvh !important;
+    }
+}
+
+/* 触摸设备滚动优化 */
+#tripListView,
+#mainContent,
+.marker-list,
+.dialog-body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* 防止下拉刷新干扰 */
+body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* iOS 安全区域适配 */
+@supports (padding: max(0px)) {
+    .fab {
+        bottom: max(20px, env(safe-area-inset-bottom));
+        right: max(20px, env(safe-area-inset-right));
+    }
+
+    .add-marker-btn {
+        bottom: max(20px, env(safe-area-inset-bottom));
+    }
+
+    .marker-info {
+        bottom: max(16px, env(safe-area-inset-bottom));
+        left: max(16px, env(safe-area-inset-left));
+        right: max(16px, env(safe-area-inset-right));
     }
 }
