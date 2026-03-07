@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="MapCapture - 旅行路线规划与标记管理工具">
+    <title>MapCapture - 旅行路线规划</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- 高德地图JavaScript API -->
+    <script src="https://webapi.amap.com/maps?v=2.0&key=d996d5d90eb3c13a57bcdb5b6501a21e"></script>
+    <script>
+        // 设置安全密钥
+        window._AMapSecurityConfig = {
+            securityJsCode: '67ea1a96de882de569f92f23a01a1e2c',
+        };
+    </script>
+    <style>
+        * { font-family: 'Inter', system-ui, sans-serif; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        #app-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 屏幕切换动画 */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* 模态框动画 */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .bottom-sheet {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        /* Toast动画 */
+        .toast {
+            animation: fadeInOut 2s ease;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            15% { opacity: 1; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+        /* 颜色选择器 */
+        .color-option {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 3px solid transparent;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: #1976D2;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3);
+        }
+
+        /* 分类芯片 */
+        .category-chip {
+            transition: all 0.2s ease;
+        }
+
+        .category-chip.active {
+            background: #2196F3 !important;
+            color: white !important;
+        }
+
+        /* 切换开关 */
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #2196F3;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active::after {
+            left: 22px;
+        }
+
+        /* 行程卡片 */
+        .trip-card {
+            transition: all 0.2s ease;
+        }
+
+        .trip-card:active {
+            transform: scale(0.98);
+        }
+
+        /* 分组样式 */
+        .trip-group {
+            transition: all 0.2s ease;
+        }
+
+        .trip-group.drag-over {
+            border: 2px dashed #60A5FA;
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        /* 标记点脉冲动画 */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 0.4; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .marker-pulse {
+            animation: pulse 2s ease infinite;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* 输入框样式 */
+        .input-field {
+            transition: border-color 0.2s ease;
+        }
+
+        .input-field:focus {
+            border-color: #2196F3;
+        }
+
+        /* 路线标记项 */
+        .route-marker-item {
+            transition: all 0.2s ease;
+        }
+
+        .route-marker-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+
+        .route-marker-item.drag-over {
+            border: 2px dashed #2196F3;
+            background: rgba(33, 150, 243, 0.05);
+        }
+
+        /* 响应式设计 */
+        @media (min-width: 768px) {
+            #app-container {
+                max-width: 480px;
+                margin: 0 auto;
+                box-shadow: 0 0 40px rgba(0,0,0,0.1);
+            }
+        }
+
+        /* 隐藏类 */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Flex工具类 */
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flex-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- Screen 1: Trip List -->
+        <div id="screen-trip-list" class="screen active">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 pt-12 pb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">MapCapture</h1>
+                        <p class="text-blue-100 text-sm">记录你的旅行足迹</p>
+                    </div>
+                    <button onclick="toggleSearch()" class="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-all" id="search-icon">
+                        <span class="material-icons text-white">search</span>
+                    </button>
+                </div>
+
+                <!-- Search Bar -->
+                <div id="search-bar" class="hidden mb-4">
+                    <div class="bg-white/20 backdrop-blur rounded-xl px-4 py-3 flex items-center gap-3">
+                        <span class="material-icons text-white/70">search</span>
+                        <input type="text" id="search-input" placeholder="搜索行程..." class="bg-transparent text-white placeholder-white/70 flex-1 outline-none text-sm" oninput="filterTrips()">
+                        <button onclick="clearSearch()" class="text-white/70 hover:text-white">
+                            <span class="material-icons text-lg">close</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="flex gap-3">
+                    <div class="flex-1 bg-white/20 rounded-xl p-3">
+                        <p class="text-2xl font-bold" id="total-trips">6</p>
+                        <p class="text-xs text-white/70">总行程</p>
+                    </div>
+                    <div class="flex-1 bg-white/20 rounded-xl p-3">
+                        <p class="text-2xl font-bold" id="total-markers">30</p>
+                        <p class="text-xs text-white/70">总标记</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Bar -->
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-gray-200">
+                <p class="text-sm text-gray-500">6 个行程</p>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleTripReorderMode()" id="trip-reorder-btn" class="p-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all">
+                        <span class="material-icons text-lg">reorder</span>
+                    </button>
+                    <button onclick="createGroup()" class="p-2 rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all">
+                        <span class="material-icons text-lg">create_new_folder</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Trip List -->
+            <div class="flex-1 bg-gray-50 px-4 py-3 overflow-y-auto" id="trip-list">
+                <!-- Content will be rendered by JavaScript -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden flex-1 bg-gray-50 flex-col items-center justify-center p-6">
+                <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+                    <span class="material-icons text-gray-400 text-5xl">folder_open</span>
+                </div>
+                <h3 class="text-gray-600 font-medium mb-2 text-lg">暂无行程</h3>
+                <p class="text-gray-400 mb-6">创建你的第一个旅行行程</p>
+                <button onclick="showScreen('screen-add-trip')" class="px-8 py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-all">
+                    创建行程
+                </button>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="bg-white border-t border-gray-200 px-6 py-3 flex justify-around">
+                <button onclick="showScreen('screen-trip-list')" class="flex flex-col items-center text-blue-600">
+                    <span class="material-icons">home</span>
+                    <span class="text-xs mt-1 font-medium">行程</span>
+                </button>
+                <button onclick="showScreen('screen-profile')" class="flex flex-col items-center text-gray-400">
+                    <span class="material-icons">person</span>
+                    <span class="text-xs mt-1">我的</span>
+                </button>
+            </div>
+
+            <!-- Add Trip FAB -->
+            <button onclick="showScreen('screen-add-trip')" class="absolute bottom-24 right-6 w-14 h-14 bg-orange-500 rounded-full shadow-lg flex items-center justify-center hover:bg-orange-600 transition-all z-50">
+                <span class="material-icons text-white text-2xl">add</span>
+            </button>
+        </div>
+
+        <!-- Screen 2: Map Screen -->
+        <div id="screen-map" class="screen">
+            <!-- 高德地图容器 -->
+            <div id="amap-container" style="width: 100%; height: 100%;"></div>
+
+            <!-- App Bar -->
+            <div class="absolute top-0 left-0 right-0 bg-white/90 backdrop-blur px-4 py-3 flex items-center justify-between z-50">
+                <button onclick="showScreen('screen-trip-list')" class="p-2 -ml-2 hover:bg-gray-100 rounded-lg">
+                    <span class="material-icons">arrow_back</span>
+                </button>
+                <div class="text-center">
+                    <h2 class="text-base font-semibold" id="map-trip-name">日本之旅</h2>
+                    <p class="text-xs text-gray-500" id="map-trip-dates">2024.03.15 - 03.25</p>
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="toggleMapSearch()" class="p-2 hover:bg-gray-100 rounded-lg">
+                        <span class="material-icons text-gray-600">search</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Map Search Bar -->
+            <div id="map-search-bar" class="absolute top-16 left-4 right-4 z-50 hidden">
+                <div class="bg-white rounded-xl shadow-lg px-4 py-3 flex items-center gap-3">
+                    <span class="material-icons text-gray-400">search</span>
+                    <input type="text" id="map-search-input" placeholder="搜索地点..." class="flex-1 outline-none text-sm" oninput="debounceSearchPOI()">
+                    <div id="search-loading" class="loading-spinner hidden"></div>
+                    <button onclick="toggleMapSearch()" class="text-gray-400 hover:text-gray-600">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+                <div id="poi-suggestions" class="hidden bg-white rounded-xl shadow-lg mt-2 max-h-56 overflow-y-auto"></div>
+            </div>
+
+            <!-- Map Controls -->
+            <div class="absolute right-4 bottom-32 flex flex-col gap-2 z-50">
+                <button onclick="mapZoomIn()" class="w-10 h-10 bg-white rounded-xl shadow flex items-center justify-center hover:bg-gray-50">
+                    <span class="material-icons text-gray-600">add</span>
+                </button>
+                <button onclick="mapZoomOut()" class="w-10 h-10 bg-white rounded-xl shadow flex items-center justify-center hover:bg-gray-50">
+                    <span class="material-icons text-gray-600">remove</span>
+                </button>
+                <button onclick="mapReset()" class="w-10 h-10 bg-white rounded-xl shadow flex items-center justify-center hover:bg-gray-50">
+                    <span class="material-icons text-blue-600">center_focus_strong</span>
+                </button>
+                <button onclick="toggleRouteDisplay()" id="route-toggle-btn" class="w-10 h-10 bg-white rounded-xl shadow flex items-center justify-center hover:bg-gray-50">
+                    <span class="material-icons text-blue-600">route</span>
+                </button>
+            </div>
+
+            <!-- Add Marker Button -->
+            <button onclick="showAddMarker()" class="absolute bottom-32 right-4 w-12 h-12 bg-blue-600 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 z-50">
+                <span class="material-icons text-white">add_location</span>
+            </button>
+
+            <!-- Bottom Panel -->
+            <div class="absolute bottom-0 left-0 right-0 bg-white px-4 py-3 border-t border-gray-200 z-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium"><span id="map-marker-count">4</span> 个标记点</p>
+                        <p class="text-xs text-gray-400" id="route-status-text">东京 → 京都 → 大阪 → 奈良</p>
+                    </div>
+                    <button onclick="showScreen('screen-route')" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">
+                        查看路线
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 3: Route Planning -->
+        <div id="screen-route" class="screen">
+            <div class="bg-blue-600 text-white px-4 py-3 flex items-center justify-between">
+                <button onclick="showScreen('screen-map')" class="p-2 -ml-2 hover:bg-white/20 rounded-lg">
+                    <span class="material-icons">arrow_back</span>
+                </button>
+                <h2 class="text-lg font-semibold">路线规划</h2>
+                <button onclick="toggleRouteViewMode()" class="p-2 hover:bg-white/20 rounded-lg">
+                    <span class="material-icons" id="route-view-icon">view_list</span>
+                </button>
+            </div>
+
+            <div class="bg-gray-50 px-4 py-3">
+                <div class="bg-white rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-blue-600" id="route-marker-count">4</p>
+                            <p class="text-xs text-gray-400">标记</p>
+                        </div>
+                        <div class="w-px h-10 bg-gray-200"></div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-orange-600">1280<span class="text-sm">km</span></p>
+                            <p class="text-xs text-gray-400">总距离</p>
+                        </div>
+                    </div>
+                    <button class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium">
+                        预览
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 bg-gray-50 px-4 py-3 overflow-y-auto">
+                <div id="route-list-view"></div>
+                <div id="route-grid-view" class="hidden"></div>
+            </div>
+
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                <button onclick="toggleReorderMode()" id="reorder-btn" class="p-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200">
+                    <span class="material-icons">reorder</span>
+                </button>
+                <span class="text-sm text-gray-500">长按拖拽排序</span>
+            </div>
+        </div>
+
+        <!-- Screen 4: Profile -->
+        <div id="screen-profile" class="screen">
+            <div class="bg-gradient-to-br from-blue-600 to-blue-700 px-6 pt-12 pb-8">
+                <h1 class="text-2xl font-bold text-white mb-2">我的</h1>
+                <p class="text-blue-100">设置与偏好</p>
+            </div>
+
+            <div class="flex-1 bg-gray-50 px-4 py-6 space-y-3">
+                <div class="bg-white rounded-2xl overflow-hidden">
+                    <div class="p-4 flex items-center gap-3 border-b border-gray-100">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-blue-600">person</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium">用户信息</p>
+                            <p class="text-sm text-gray-400">管理您的账户</p>
+                        </div>
+                        <span class="material-icons text-gray-300">chevron_right</span>
+                    </div>
+                    <div class="p-4 flex items-center gap-3">
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-orange-600">settings</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium">设置</p>
+                            <p class="text-sm text-gray-400">应用偏好设置</p>
+                        </div>
+                        <span class="material-icons text-gray-300">chevron_right</span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl overflow-hidden">
+                    <div class="p-4 flex items-center gap-3 border-b border-gray-100">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-green-600">help</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium">帮助与反馈</p>
+                            <p class="text-sm text-gray-400">常见问题与反馈</p>
+                        </div>
+                        <span class="material-icons text-gray-300">chevron_right</span>
+                    </div>
+                    <div class="p-4 flex items-center gap-3">
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-purple-600">policy</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium">隐私政策</p>
+                            <p class="text-sm text-gray-400">了解数据使用政策</p>
+                        </div>
+                        <span class="material-icons text-gray-300">chevron_right</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border-t border-gray-200 px-6 py-3 flex justify-around">
+                <button onclick="showScreen('screen-trip-list')" class="flex flex-col items-center text-gray-400">
+                    <span class="material-icons">home</span>
+                    <span class="text-xs mt-1">行程</span>
+                </button>
+                <button onclick="showScreen('screen-profile')" class="flex flex-col items-center text-blue-600">
+                    <span class="material-icons">person</span>
+                    <span class="text-xs mt-1 font-medium">我的</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="screen-add-trip" class="screen bg-black/50 items-center justify-center modal-backdrop">
+            <div class="bg-white rounded-2xl w-full max-w-md p-6 m-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold">创建新行程</h3>
+                    <button onclick="showScreen('screen-trip-list')" class="p-1 hover:bg-gray-100 rounded-full">
+                        <span class="material-icons text-gray-400">close</span>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm text-gray-500 mb-2 block">行程名称</label>
+                        <input type="text" id="trip-name-input" placeholder="输入行程名称" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500 mb-2 block">开始日期</label>
+                        <input type="date" id="start-date-input" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500 mb-2 block">结束日期</label>
+                        <input type="date" id="end-date-input" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="showScreen('screen-trip-list')" class="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">取消</button>
+                    <button onclick="createTrip()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">创建</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-add-marker" class="screen bg-black/50 items-end justify-center modal-backdrop">
+            <div class="bg-white rounded-t-3xl w-full p-6 max-h-[85vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="closeAddMarker()" class="p-2 -ml-2 hover:bg-gray-100 rounded-full">
+                        <span class="material-icons text-gray-600">close</span>
+                    </button>
+                    <h3 class="text-lg font-semibold">添加标记</h3>
+                    <div class="w-10"></div>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 p-3 bg-blue-50 rounded-xl">
+                        <span class="material-icons text-blue-500">location_on</span>
+                        <span class="text-sm text-gray-600 font-mono" id="new-marker-coords">35.714765, 139.796655</span>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500 mb-2 block">标题</label>
+                        <input type="text" id="new-marker-title" placeholder="输入地点名称" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500 mb-2 block">地址</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-marker-address" placeholder="自动获取地址" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none">
+                            <button onclick="fetchAddress()" class="px-4 bg-gray-100 rounded-xl hover:bg-gray-200">
+                                <span class="material-icons text-gray-500">my_location</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500 mb-2 block">分类</label>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="category-chip px-3 py-1.5 bg-gray-100 rounded-full text-sm cursor-pointer" onclick="selectCategory(this)">景点</span>
+                            <span class="category-chip px-3 py-1.5 bg-gray-100 rounded-full text-sm cursor-pointer" onclick="selectCategory(this)">美食</span>
+                            <span class="category-chip px-3 py-1.5 bg-gray-100 rounded-full text-sm cursor-pointer" onclick="selectCategory(this)">酒店</span>
+                            <span class="category-chip px-3 py-1.5 bg-gray-100 rounded-full text-sm cursor-pointer" onclick="selectCategory(this)">购物</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500 mb-2 block">颜色</label>
+                        <div class="flex gap-3">
+                            <div class="color-option selected" style="background: #F44336;" onclick="selectColor(this)"></div>
+                            <div class="color-option" style="background: #2196F3;" onclick="selectColor(this)"></div>
+                            <div class="color-option" style="background: #4CAF50;" onclick="selectColor(this)"></div>
+                            <div class="color-option" style="background: #FFC107;" onclick="selectColor(this)"></div>
+                            <div class="color-option" style="background: #9C27B0;" onclick="selectColor(this)"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                        <div class="flex items-center gap-2">
+                            <span class="material-icons text-lg text-blue-500">timeline</span>
+                            <div>
+                                <p class="text-sm font-medium">纳入路线规划</p>
+                                <p class="text-xs text-gray-400">启用后将显示在路线中</p>
+                            </div>
+                        </div>
+                        <div id="add-marker-route-toggle" class="toggle-switch active" onclick="toggleAddMarkerRoute()"></div>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeAddMarker()" class="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">取消</button>
+                    <button onclick="addMarker()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">添加标记</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div id="success-toast" class="hidden absolute top-20 left-4 right-4 bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50">
+            <span class="material-icons">check_circle</span>
+            <span id="toast-message">操作成功</span>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 数据 ====================
+        const trips = [
+            { id: 1, name: 'DAY1', dates: '2024.03.15', markers: 4, gradient: 'linear-gradient(135deg, #60A5FA, #3B82F6)', displayOrder: 1, groupId: 'g1' },
+            { id: 2, name: 'DAY2', dates: '2024.03.16', markers: 5, gradient: 'linear-gradient(135deg, #60A5FA, #3B82F6)', displayOrder: 2, groupId: 'g1' },
+            { id: 3, name: 'DAY3', dates: '2024.03.17', markers: 3, gradient: 'linear-gradient(135deg, #60A5FA, #3B82F6)', displayOrder: 3, groupId: 'g1' },
+            { id: 4, name: '云南行', dates: '2024.01.10', markers: 8, gradient: 'linear-gradient(135deg, #4ADE80, #22C55E)', displayOrder: 4, groupId: null },
+            { id: 5, name: '成都美食', dates: '2023.12.05', markers: 6, gradient: 'linear-gradient(135deg, #FB923C, #F97316)', displayOrder: 5, groupId: null },
+            { id: 6, name: '西北大环线', dates: '2023.10.01', markers: 12, gradient: 'linear-gradient(135deg, #A78BFA, #8B5CF6)', displayOrder: 6, groupId: null },
+        ];
+
+        let groups = [
+            { id: 'g1', name: '东京旅行', color: '#60A5FA', displayOrder: 1 },
+        ];
+
+        let markers = [
+            { id: 'm1', tripId: 1, title: '浅草寺', address: '东京都台东区浅草2-3-1', lat: 35.714765, lng: 139.796655, category: '景点', color: '#F44336', displayOrder: 1, includeInRoute: true },
+            { id: 'm2', tripId: 1, title: '东京塔', address: '东京都港区芝公园1-1', lat: 35.6586, lng: 139.7454, category: '景点', color: '#2196F3', displayOrder: 2, includeInRoute: true },
+            { id: 'm3', tripId: 1, title: '涩谷', address: '东京都涩谷区', lat: 35.6580, lng: 139.7016, category: '购物', color: '#4CAF50', displayOrder: 3, includeInRoute: true },
+            { id: 'm4', tripId: 1, title: '新宿', address: '东京都新宿区', lat: 35.6900, lng: 139.7000, category: '购物', color: '#FFC107', displayOrder: 4, includeInRoute: true },
+        ];
+
+        // ==================== 状态变量 ====================
+        let currentTrip = trips[0];
+        let currentMarkerId = null;
+        let isReorderMode = false;
+        let isRouteDisplayed = true;
+        let searchVisible = false;
+        let includeInRouteNewMarker = true;
+        let isTripReorderMode = false;
+        let map = null;
+        let amapMarkers = [];
+        let routePolyline = null;
+
+        // ==================== 初始化 ====================
+        window.onload = function() {
+            initAMap();
+            renderTripList();
+            updateMarkerCount();
+        };
+
+        // ==================== 高德地图初始化 ====================
+        function initAMap() {
+            if (typeof AMap === 'undefined') {
+                console.error('高德地图API未加载');
+                return;
+            }
+
+            map = new AMap.Map('amap-container', {
+                zoom: 13,
+                center: [139.796655, 35.714765],
+                viewMode: '2D',
+                showLabel: true,
+                mapStyle: 'amap://styles/normal',
+            });
+
+            map.addControl(new AMap.Scale());
+            map.addControl(new AMap.ToolBar({
+                position: { top: '60px', right: '40px' }
+            }));
+
+            map.on('complete', function() {
+                renderAMapMarkers();
+            });
+
+            map.on('click', function() {
+                closeMapPopups();
+            });
+        }
+
+        // ==================== 高德地图标记渲染 ====================
+        function renderAMapMarkers() {
+            if (!map) return;
+
+            amapMarkers.forEach(marker => marker.setMap(null));
+            amapMarkers = [];
+
+            if (routePolyline) {
+                routePolyline.setMap(null);
+                routePolyline = null;
+            }
+
+            const routeMarkers = markers.filter(m => m.includeInRoute)
+                .sort((a, b) => a.displayOrder - b.displayOrder);
+
+            if (routeMarkers.length >= 2) {
+                const path = routeMarkers.map(m => [m.lng, m.lat]);
+                routePolyline = new AMap.Polyline({
+                    path: path,
+                    borderWeight: 2,
+                    strokeColor: '#2196F3',
+                    lineJoin: 'round',
+                    strokeStyle: 'dashed',
+                    strokeDasharray: [10, 5],
+                    strokeOpacity: 1,
+                    strokeWeight: 4,
+                });
+                routePolyline.setMap(map);
+            }
+
+            markers.forEach(marker => {
+                const isInRoute = marker.includeInRoute;
+                let content = '';
+
+                if (isInRoute) {
+                    content = `
+                        <div style="
+                            background-color: ${marker.color};
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 50% 50% 50% 0;
+                            transform: rotate(-45deg);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                        ">
+                            <span style="color: white; font-size: 14px; font-weight: bold; transform: rotate(45deg);">${marker.displayOrder}</span>
+                        </div>
+                    `;
+                } else {
+                    content = `
+                        <div style="
+                            background-color: ${marker.color};
+                            width: 28px;
+                            height: 28px;
+                            border-radius: 50%;
+                            border: 3px solid white;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                        ">
+                            <span class="material-icons" style="color: white; font-size: 16px;">place</span>
+                        </div>
+                    `;
+                }
+
+                const amapMarker = new AMap.Marker({
+                    position: [marker.lng, marker.lat],
+                    content: content,
+                    offset: new AMap.Pixel(-16, -32),
+                    title: marker.title,
+                });
+
+                amapMarker.on('click', function() {
+                    selectMarker(marker.id);
+                });
+
+                amapMarker.setMap(map);
+                amapMarkers.push(amapMarker);
+            });
+        }
+
+        // ==================== 渲染函数 ====================
+        function renderTripList() {
+            const list = document.getElementById('trip-list');
+            const tripMarkers = {};
+            markers.forEach(m => {
+                if (!tripMarkers[m.tripId]) tripMarkers[m.tripId] = 0;
+                tripMarkers[m.tripId]++;
+            });
+
+            const groupHTML = groups.map(group => {
+                const groupTrips = trips.filter(t => t.groupId === group.id).sort((a, b) => a.displayOrder - b.displayOrder);
+                if (groupTrips.length === 0) return '';
+
+                return `
+                    <div class="trip-group mb-3">
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl px-4 py-3 flex items-center justify-between border-b border-blue-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-icons text-blue-500">folder</span>
+                                <span class="font-medium text-blue-700">${group.name}</span>
+                            </div>
+                            <span class="text-xs text-blue-400">${groupTrips.length} 个行程</span>
+                        </div>
+                        <div class="bg-white rounded-b-2xl">
+                            ${groupTrips.map(trip => renderTripListItem(trip, tripMarkers)).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const ungroupedTrips = trips.filter(t => !t.groupId).sort((a, b) => a.displayOrder - b.displayOrder);
+            const ungroupedHTML = ungroupedTrips.map(trip => renderTripListItem(trip, tripMarkers)).join('');
+
+            list.innerHTML = groupHTML + ungroupedHTML;
+        }
+
+        function renderTripListItem(trip, tripMarkers) {
+            return `
+                <div class="p-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 bg-white border-b border-gray-100" onclick="openTrip(${trip.id})">
+                    <div class="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0" style="background: ${trip.gradient}">
+                        <span class="material-icons text-white/50 text-xl">map</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-medium text-sm truncate">${trip.name}</h3>
+                        <p class="text-xs text-gray-400">${trip.dates}</p>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <p class="text-orange-500 font-medium text-sm">${tripMarkers[trip.id] || trip.markers}</p>
+                        <p class="text-xs text-gray-400">标记</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== 页面切换 ====================
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+
+            if (screenId === 'screen-map' && map) {
+                renderAMapMarkers();
+            }
+            if (screenId === 'screen-trip-list') {
+                renderTripList();
+            }
+        }
+
+        // ==================== 行程操作 ====================
+        function openTrip(tripId) {
+            currentTrip = trips.find(t => t.id === tripId);
+            if (currentTrip) {
+                document.getElementById('map-trip-name').textContent = currentTrip.name;
+                document.getElementById('map-trip-dates').textContent = currentTrip.dates;
+            }
+            showScreen('screen-map');
+        }
+
+        // ==================== 地图操作 ====================
+        function mapZoomIn() {
+            if (map) map.setZoom(map.getZoom() + 1);
+        }
+
+        function mapZoomOut() {
+            if (map) map.setZoom(map.getZoom() - 1);
+        }
+
+        function mapReset() {
+            if (map) map.setZoomAndCenter(13, new AMap.LngLat(139.796655, 35.714765));
+        }
+
+        function toggleRouteDisplay() {
+            isRouteDisplayed = !isRouteDisplayed;
+            if (routePolyline) {
+                routePolyline.setVisible(isRouteDisplayed);
+            }
+            document.getElementById('route-toggle-btn').classList.toggle('active');
+        }
+
+        function toggleMapSearch() {
+            const searchBar = document.getElementById('map-search-bar');
+            searchBar.classList.toggle('hidden');
+        }
+
+        function showAddMarker() {
+            showScreen('screen-add-marker');
+        }
+
+        function closeAddMarker() {
+            document.getElementById('new-marker-title').value = '';
+            document.getElementById('new-marker-address').value = '';
+            showScreen('screen-map');
+        }
+
+        function selectCategory(el) {
+            el.parentElement.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function selectColor(el) {
+            el.parentElement.querySelectorAll('.color-option').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function toggleAddMarkerRoute() {
+            includeInRouteNewMarker = !includeInRouteNewMarker;
+            document.getElementById('add-marker-route-toggle').classList.toggle('active');
+        }
+
+        function addMarker() {
+            const title = document.getElementById('new-marker-title').value;
+            if (!title.trim()) {
+                showToast('请输入标记标题');
+                return;
+            }
+
+            const selectedColorEl = document.querySelector('#screen-add-marker .color-option.selected');
+            const color = selectedColorEl ? selectedColorEl.style.background : '#F44336';
+
+            let displayOrder = 0;
+            if (includeInRouteNewMarker) {
+                const maxOrder = Math.max(0, ...markers.filter(m => m.includeInRoute).map(m => m.displayOrder));
+                displayOrder = maxOrder + 1;
+            }
+
+            const newMarker = {
+                id: 'm' + Date.now(),
+                tripId: 1,
+                title: title,
+                address: document.getElementById('new-marker-address').value || '未知地址',
+                lat: 35.714765 + (Math.random() - 0.5) * 0.1,
+                lng: 139.796655 + (Math.random() - 0.5) * 0.1,
+                category: '景点',
+                color: color,
+                displayOrder: displayOrder,
+                includeInRoute: includeInRouteNewMarker,
+            };
+
+            markers.push(newMarker);
+            renderAMapMarkers();
+            updateMarkerCount();
+            closeAddMarker();
+            showToast('标记添加成功');
+        }
+
+        function selectMarker(markerId) {
+            const marker = markers.find(m => m.id === markerId);
+            if (marker) {
+                alert(`${marker.title}\n${marker.address}`);
+            }
+        }
+
+        // ==================== 工具函数 ====================
+        function updateMarkerCount() {
+            document.getElementById('map-marker-count').textContent = markers.length;
+            document.getElementById('total-markers').textContent = 30 + markers.length;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('success-toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('hidden');
+            toast.classList.add('toast');
+            setTimeout(() => toast.classList.add('hidden'), 2000);
+        }
+
+        function toggleSearch() {
+            const searchBar = document.getElementById('search-bar');
+            const searchIcon = document.getElementById('search-icon');
+            searchBar.classList.toggle('hidden');
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+        }
+
+        function filterTrips() {
+            // 简单的搜索过滤实现
+            const query = document.getElementById('search-input').value.toLowerCase();
+            // 这里可以添加过滤逻辑
+        }
+
+        function createGroup() {
+            const name = prompt('请输入分组名称：');
+            if (name && name.trim()) {
+                groups.push({
+                    id: 'g' + Date.now(),
+                    name: name.trim(),
+                    color: '#60A5FA',
+                    displayOrder: groups.length + 1
+                });
+                renderTripList();
+                showToast('分组已创建');
+            }
+        }
+
+        function toggleTripReorderMode() {
+            isTripReorderMode = !isTripReorderMode;
+            const btn = document.getElementById('trip-reorder-btn');
+            btn.classList.toggle('bg-blue-600', isTripReorderMode);
+            btn.classList.toggle('text-white', isTripReorderMode);
+            showToast(isTripReorderMode ? '排序模式已开启' : '排序模式已关闭');
+        }
+
+        function createTrip() {
+            const name = document.getElementById('trip-name-input').value;
+            if (name.trim()) {
+                showToast('行程创建成功');
+                showScreen('screen-trip-list');
+            }
+        }
+
+        function debounceSearchPOI() {
+            // POI搜索防抖实现
+        }
+
+        function closeMapPopups() {
+            // 关闭地图上的弹出层
+        }
+
+        function fetchAddress() {
+            document.getElementById('new-marker-address').value = '东京都台东区浅草2-3-1';
+        }
+    </script>
+</body>
+</html>
